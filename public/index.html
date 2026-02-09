@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>심플 대기실 금지어 게임</title>
     <link rel="stylesheet" href="style.css">
     <script src="/socket.io/socket.io.js"></script>
@@ -37,6 +38,12 @@
             </div>
             
             <div id="avatar-layer"></div>
+
+            <div id="joystick-container">
+                <div id="joystick-base">
+                    <div id="joystick-stick"></div>
+                </div>
+            </div>
             
             <div id="word-setter" class="modal" style="display:none">
                 <p><strong id="target-player-name"></strong>님의 금지어:</p>
@@ -47,7 +54,10 @@
             <div class="game-ui">
                 <div id="chat-display"></div>
                 <div class="input-area">
-                    <input type="text" id="chatInput" placeholder="WASD 이동 / 엔터 채팅">
+                    <input type="text" id="chatInput" placeholder="메시지 입력...">
+                    <button id="sendBtn" onclick="sendChat()">전송</button>
+                </div>
+                <div class="control-btns">
                     <button id="startBtn" onclick="requestStart()">시작</button>
                     <button id="stopBtn" onclick="forceEnd()">종료</button>
                 </div>
