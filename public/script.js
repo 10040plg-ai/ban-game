@@ -1,5 +1,5 @@
 const socket = io();
-let myData = { name: '', avatar: '', x: 150, y: 150 };
+let myData = { name: '', avatar: '', x: 300, y: 300 };
 let players = {}; 
 let currentRoom, targetIdForWord;
 const keys = {};
@@ -17,7 +17,9 @@ document.getElementById('imageInput').onchange = (e) => {
             canvas.width = 150; canvas.height = 150;
             canvas.getContext('2d').drawImage(img, 0, 0, 150, 150);
             myData.avatar = canvas.toDataURL('image/jpeg', 0.8);
-            document.getElementById('avatar-preview').innerHTML = `<img src="${myData.avatar}" style="width:100%;height:100%;border-radius:50%">`;
+            const preview = document.getElementById('avatar-preview');
+            preview.innerHTML = `<img src="${myData.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            preview.style.border = "none";
         };
         img.src = ev.target.result;
     };
@@ -54,21 +56,21 @@ function updateMyPosition() {
     const speed = 4;
     let dx = 0, dy = 0;
 
-    // 키보드 조작
+    // 키보드 이동
     if (keys['w'] || keys['arrowup']) dy -= speed;
     if (keys['s'] || keys['arrowdown']) dy += speed;
     if (keys['a'] || keys['arrowleft']) dx -= speed;
     if (keys['d'] || keys['arrowright']) dx += speed;
 
-    // 조이스틱 조작
+    // 조이스틱 이동 (조이스틱이 활성화된 경우)
     if (joystickActive) {
         dx = joystickVector.x * speed;
         dy = joystickVector.y * speed;
     }
 
     if (dx !== 0 || dy !== 0) {
-        const nextX = Math.max(0, Math.min(window.innerWidth - 60, myData.x + dx));
-        const nextY = Math.max(0, Math.min(window.innerHeight - 80, myData.y + dy));
+        const nextX = Math.max(0, Math.min(window.innerWidth - 70, myData.x + dx));
+        const nextY = Math.max(0, Math.min(window.innerHeight - 90, myData.y + dy));
         if (myData.x !== nextX || myData.y !== nextY) {
             myData.x = nextX;
             myData.y = nextY;
@@ -81,11 +83,11 @@ function updateMyPosition() {
     }
 }
 
-// 조이스틱 로직
+// 가상 조이스틱 초기화
 function initJoystick() {
     const base = document.getElementById('joystick-base');
     const stick = document.getElementById('joystick-stick');
-    const limit = 40;
+    const limit = 40; // 스틱 이동 제한 반경
 
     const handleMove = (e) => {
         if (!joystickActive) return;
@@ -104,6 +106,7 @@ function initJoystick() {
         }
         
         stick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        // 이동 벡터 정규화 (-1 ~ 1)
         joystickVector = { x: deltaX / limit, y: deltaY / limit };
     };
 
@@ -115,6 +118,16 @@ function initJoystick() {
         joystickVector = { x: 0, y: 0 };
     });
 }
+
+function sendChat() {
+    const input = document.getElementById('chatInput');
+    if (input.value.trim()) {
+        socket.emit('chat', { room: currentRoom, message: input.value });
+        input.value = '';
+    }
+}
+
+document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') sendChat(); };
 
 socket.on('updatePlayers', (serverPlayers) => {
     for (let id in serverPlayers) {
@@ -148,25 +161,8 @@ function renderAllPlayers() {
     layer.innerHTML = html;
 }
 
-function sendChat() {
-    const input = document.getElementById('chatInput');
-    if (input.value.trim()) {
-        socket.emit('chat', { room: currentRoom, message: input.value });
-        input.value = '';
-        input.blur(); // 모바일 키보드 닫기
-    }
-}
-
-document.getElementById('chatInput').onkeypress = (e) => {
-    if (e.key === 'Enter') sendChat();
-};
-
 function requestStart() { socket.emit('requestStart', currentRoom); }
-function forceEnd() {
-    if (confirm("게임을 강제로 종료하시겠습니까?")) {
-        socket.emit('forceEndGame', currentRoom);
-    }
-}
+function forceEnd() { if (confirm("게임을 강제로 종료하시겠습니까?")) socket.emit('forceEndGame', currentRoom); }
 
 socket.on('openWordSetter', (ps) => {
     const ids = Object.keys(ps);
