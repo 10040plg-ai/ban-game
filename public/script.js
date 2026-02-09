@@ -33,6 +33,7 @@ function finishSetup() {
 
 function connectRoom() {
     currentRoom = document.getElementById('roomCode').value;
+    if (!currentRoom) return alert("방 번호를 입력해주세요.");
     socket.emit('join', { room: currentRoom, name: myData.name, avatar: myData.avatar });
     document.getElementById('room-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
@@ -53,17 +54,14 @@ function updateMyPosition() {
     if (document.activeElement.tagName === 'INPUT') return;
     const speed = 4;
     let dx = 0, dy = 0;
-
     if (keys['w'] || keys['arrowup']) dy -= speed;
     if (keys['s'] || keys['arrowdown']) dy += speed;
     if (keys['a'] || keys['arrowleft']) dx -= speed;
     if (keys['d'] || keys['arrowright']) dx += speed;
-
     if (joystickActive) {
         dx = joystickVector.x * speed;
         dy = joystickVector.y * speed;
     }
-
     if (dx !== 0 || dy !== 0) {
         const nextX = Math.max(0, Math.min(window.innerWidth - 70, myData.x + dx));
         const nextY = Math.max(0, Math.min(window.innerHeight - 90, myData.y + dy));
@@ -83,7 +81,6 @@ function initJoystick() {
     const base = document.getElementById('joystick-base');
     const stick = document.getElementById('joystick-stick');
     const limit = 40;
-
     const handleMove = (e) => {
         if (!joystickActive) return;
         const touch = e.touches ? e.touches[0] : e;
@@ -100,7 +97,6 @@ function initJoystick() {
         stick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
         joystickVector = { x: deltaX / limit, y: deltaY / limit };
     };
-
     base.addEventListener('touchstart', (e) => { joystickActive = true; handleMove(e); e.preventDefault(); });
     window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', () => {
@@ -120,7 +116,6 @@ function sendChat() {
 document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') sendChat(); };
 
 socket.on('updatePlayers', (serverPlayers) => {
-    // 플레이어 데이터 갱신
     for (let id in serverPlayers) {
         if (!players[id]) {
             players[id] = { ...serverPlayers[id], curX: serverPlayers[id].x, curY: serverPlayers[id].y };
@@ -129,16 +124,9 @@ socket.on('updatePlayers', (serverPlayers) => {
         }
     }
     for (let id in players) { if (!serverPlayers[id]) delete players[id]; }
-
-    // 방장 체크하여 버튼 표시
     const me = serverPlayers[socket.id];
-    if (me && me.isHost) {
-        document.getElementById('host-controls').style.display = 'flex';
-    } else {
-        document.getElementById('host-controls').style.display = 'none';
-    }
+    document.getElementById('host-controls').style.display = (me && me.isHost) ? 'flex' : 'none';
 
-    // 금지어 리스트 표시
     document.getElementById('leader-list').innerHTML = Object.values(serverPlayers).map(p => `
         <div class="leader-item">
             <span>${p.isHost ? '👑' : ''} ${p.name}</span>
@@ -153,16 +141,15 @@ function renderAllPlayers() {
     let html = "";
     for (let id in players) {
         const p = players[id];
+        if (!p.curX) { p.curX = p.x; p.curY = p.y; }
         p.curX += (p.x - p.curX) * 0.15;
         p.curY += (p.y - p.curY) * 0.15;
-        
-        // dead 클래스로 흑백 효과만 줌 (해골 제거됨)
         html += `
             <div class="avatar-wrapper ${p.isAlive ? '' : 'dead'}" style="transform: translate(${p.curX}px, ${p.curY}px);">
                 <div class="avatar-box">
-                    <img src="${p.avatar}" class="avatar-img ${p.isMoving ? 'walking' : ''}">
+                    <div class="avatar-shadow"></div> <img src="${p.avatar}" class="avatar-img ${p.isMoving ? 'walking' : ''}">
                 </div>
-                <div class="label">${p.name} ${p.isReady ? '✅' : ''}</div>
+                <div class="label">${p.isHost ? '👑 ' : ''}${p.name} ${p.isReady ? '✅' : ''}</div>
             </div>
         `;
     }
@@ -181,6 +168,7 @@ socket.on('openWordSetter', (ps) => {
 
 function confirmWord() {
     const word = document.getElementById('target-word-input').value;
+    if (!word) return alert("금지어를 입력하세요!");
     socket.emit('setWordAndReady', { room: currentRoom, targetId: targetIdForWord, word });
     document.getElementById('word-setter').style.display = 'none';
 }
@@ -193,14 +181,21 @@ socket.on('newMessage', (d) => {
     chat.scrollTop = chat.scrollHeight;
 });
 
-socket.on('playerOut', (p) => alert(`${p.name} 탈락! 금지어: ${p.word}`));
+// 탈락 사유 구분 로직 적용
+socket.on('playerOut', (p) => {
+    if (p.reason === "30초 시간 초과") {
+        alert(`📢 ${p.name}님 탈락!\n사유: 30초 동안 채팅이 없어 [시간 초과]로 탈락했습니다.`);
+    } else {
+        alert(`📢 ${p.name}님 탈락!\n사유: 금지어 [${p.word}]를 말했습니다.`);
+    }
+});
+
 socket.on('gameStarted', () => alert("게임 시작!"));
 socket.on('gameEnded', () => {
     alert("게임이 종료되었습니다.");
     document.getElementById('word-setter').style.display = 'none';
 });
 
-// 승리 알림 이벤트 추가
 socket.on('gameWinner', (name) => {
     alert(`🎉 게임 종료! [${name}]님이 최종 승리했습니다! 🎉`);
 });
