@@ -91,4 +91,9 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => console.log('서버 실행 중: http://localhost:3000'));
+
+const PORT = process.env.PORT || 3000; // Render가 주는 포트를 쓰거나, 없으면 3000 사용
+
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+});
