@@ -1,8 +1,12 @@
 const socket = io();
-let myData = { name: '', avatar: '', x: 300, y: 400 };
+let myData = { name: '', avatar: '', x: 150, y: 150 };
 let players = {}; 
 let currentRoom, targetIdForWord;
 const keys = {};
+
+// 조이스틱 변수
+let joystickActive = false;
+let joystickVector = { x: 0, y: 0 };
 
 document.getElementById('imageInput').onchange = (e) => {
     const reader = new FileReader();
@@ -32,6 +36,7 @@ function connectRoom() {
     socket.emit('join', { room: currentRoom, name: myData.name, avatar: myData.avatar });
     document.getElementById('room-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
+    initJoystick();
     requestAnimationFrame(gameLoop);
 }
 
@@ -48,14 +53,22 @@ function updateMyPosition() {
     if (document.activeElement.tagName === 'INPUT') return;
     const speed = 4;
     let dx = 0, dy = 0;
+
+    // 키보드 조작
     if (keys['w'] || keys['arrowup']) dy -= speed;
     if (keys['s'] || keys['arrowdown']) dy += speed;
     if (keys['a'] || keys['arrowleft']) dx -= speed;
     if (keys['d'] || keys['arrowright']) dx += speed;
 
+    // 조이스틱 조작
+    if (joystickActive) {
+        dx = joystickVector.x * speed;
+        dy = joystickVector.y * speed;
+    }
+
     if (dx !== 0 || dy !== 0) {
-        const nextX = Math.max(0, Math.min(window.innerWidth - 80, myData.x + dx));
-        const nextY = Math.max(0, Math.min(window.innerHeight - 100, myData.y + dy));
+        const nextX = Math.max(0, Math.min(window.innerWidth - 60, myData.x + dx));
+        const nextY = Math.max(0, Math.min(window.innerHeight - 80, myData.y + dy));
         if (myData.x !== nextX || myData.y !== nextY) {
             myData.x = nextX;
             myData.y = nextY;
@@ -66,6 +79,41 @@ function updateMyPosition() {
             }, 100);
         }
     }
+}
+
+// 조이스틱 로직
+function initJoystick() {
+    const base = document.getElementById('joystick-base');
+    const stick = document.getElementById('joystick-stick');
+    const limit = 40;
+
+    const handleMove = (e) => {
+        if (!joystickActive) return;
+        const touch = e.touches ? e.touches[0] : e;
+        const rect = base.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        let deltaX = touch.clientX - centerX;
+        let deltaY = touch.clientY - centerY;
+        const distance = Math.sqrt(deltaX**2 + deltaY**2);
+        
+        if (distance > limit) {
+            deltaX *= limit / distance;
+            deltaY *= limit / distance;
+        }
+        
+        stick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        joystickVector = { x: deltaX / limit, y: deltaY / limit };
+    };
+
+    base.addEventListener('touchstart', (e) => { joystickActive = true; handleMove(e); e.preventDefault(); });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', () => {
+        joystickActive = false;
+        stick.style.transform = `translate(0px, 0px)`;
+        joystickVector = { x: 0, y: 0 };
+    });
 }
 
 socket.on('updatePlayers', (serverPlayers) => {
@@ -100,8 +148,20 @@ function renderAllPlayers() {
     layer.innerHTML = html;
 }
 
-function requestStart() { socket.emit('requestStart', currentRoom); }
+function sendChat() {
+    const input = document.getElementById('chatInput');
+    if (input.value.trim()) {
+        socket.emit('chat', { room: currentRoom, message: input.value });
+        input.value = '';
+        input.blur(); // 모바일 키보드 닫기
+    }
+}
 
+document.getElementById('chatInput').onkeypress = (e) => {
+    if (e.key === 'Enter') sendChat();
+};
+
+function requestStart() { socket.emit('requestStart', currentRoom); }
 function forceEnd() {
     if (confirm("게임을 강제로 종료하시겠습니까?")) {
         socket.emit('forceEndGame', currentRoom);
@@ -120,13 +180,6 @@ function confirmWord() {
     socket.emit('setWordAndReady', { room: currentRoom, targetId: targetIdForWord, word });
     document.getElementById('word-setter').style.display = 'none';
 }
-
-document.getElementById('chatInput').onkeypress = (e) => {
-    if (e.key === 'Enter') {
-        socket.emit('chat', { room: currentRoom, message: e.target.value });
-        e.target.value = '';
-    }
-};
 
 socket.on('newMessage', (d) => {
     const chat = document.getElementById('chat-display');
