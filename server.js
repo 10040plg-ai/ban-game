@@ -11,18 +11,15 @@ const io = new Server(server, {
 app.use(express.static('public'));
 
 let rooms = {};
+let gameTimers = {}; 
 
 io.on('connection', (socket) => {
-    // 플레이어 입장 및 방장 설정
     socket.on('join', (data) => {
         const { room, name, avatar } = data;
         socket.join(room);
-        
         if (!rooms[room]) {
-            // 방이 없으면 생성하고 첫 입장자를 방장(hostId)으로 설정
             rooms[room] = { players: {}, status: 'waiting', hostId: socket.id };
         }
-        
         rooms[room].players[socket.id] = {
             id: socket.id, 
             name: name, 
@@ -33,12 +30,11 @@ io.on('connection', (socket) => {
             isAlive: true, 
             isReady: false, 
             isMoving: false,
-            isHost: (rooms[room].hostId === socket.id) // 방장 여부 저장
+            isHost: (rooms[room].hostId === socket.id)
         };
         io.to(room).emit('updatePlayers', rooms[room].players);
     });
 
-    // 캐릭터 이동
     socket.on('move', (data) => {
         const { room, x, y, isMoving } = data;
         const session = rooms[room];
@@ -50,7 +46,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 시작 버튼 클릭 (방장만 가능)
     socket.on('requestStart', (room) => {
         const session = rooms[room];
         if (session && session.hostId === socket.id) {
@@ -58,34 +53,24 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 강제 종료 (방장만 가능)
-    socket.on('forceEndGame', (room) => {
-        const session = rooms[room];
-        if (session && session.hostId === socket.id) {
-            resetGameStatus(room);
-            io.to(room).emit('gameEnded'); 
-        }
-    });
-
-    // 금지어 설정 및 준비 완료
     socket.on('setWordAndReady', (data) => {
         const { room, targetId, word } = data;
         const session = rooms[room];
         if (session && session.players[targetId]) {
             session.players[targetId].forbiddenWord = word;
             session.players[socket.id].isReady = true;
-            
-            // 모든 플레이어가 준비되었는지 확인
             const allReady = Object.values(session.players).every(p => p.isReady);
             if (allReady) {
                 session.status = 'playing';
                 io.to(room).emit('gameStarted');
+                Object.keys(session.players).forEach(pid => {
+                    startAFKTimer(room, pid);
+                });
             }
             io.to(room).emit('updatePlayers', session.players);
         }
     });
 
-    // 채팅 및 금지어 체크 + 승리 판정
     socket.on('chat', (data) => {
         const { room, message } = data;
         const session = rooms[room];
@@ -93,34 +78,29 @@ io.on('connection', (socket) => {
         const player = session.players[socket.id];
         if (!player) return;
 
-        // 게임 중일 때 금지어 검사
-        if (session.status === 'playing' && player.isAlive && player.forbiddenWord && message.includes(player.forbiddenWord)) {
-            player.isAlive = false;
-            io.to(room).emit('playerOut', { name: player.name, word: player.forbiddenWord });
-            
-            // 생존자 확인 후 승리 판정
-            const alivePlayers = Object.values(session.players).filter(p => p.isAlive);
-            if (alivePlayers.length === 1) {
-                io.to(room).emit('gameWinner', alivePlayers[0].name);
-                resetGameStatus(room);
+        if (session.status === 'playing' && player.isAlive) {
+            startAFKTimer(room, socket.id); // 채팅 시 타이머 초기화
+
+            if (player.forbiddenWord && message.includes(player.forbiddenWord)) {
+                eliminatePlayer(room, socket.id, "금지어 사용"); // 사유 전달
+            } else {
+                io.to(room).emit('newMessage', { 
+                    name: player.name, 
+                    message: message, 
+                    isAlive: true 
+                });
             }
         } else {
-            io.to(room).emit('newMessage', { 
-                name: player.name, 
-                message: message, 
-                isAlive: player.isAlive 
-            });
+            io.to(room).emit('newMessage', { name: player.name, message: message, isAlive: player.isAlive });
         }
-        io.to(room).emit('updatePlayers', session.players);
     });
 
-    // 퇴장 처리 및 방장 위임
     socket.on('disconnect', () => {
         for (const r in rooms) {
             if (rooms[r].players && rooms[r].players[socket.id]) {
                 const wasHost = (rooms[r].hostId === socket.id);
                 delete rooms[r].players[socket.id];
-                
+                if (gameTimers[socket.id]) clearTimeout(gameTimers[socket.id]);
                 if (wasHost && Object.keys(rooms[r].players).length > 0) {
                     const nextHostId = Object.keys(rooms[r].players)[0];
                     rooms[r].hostId = nextHostId;
@@ -131,7 +111,41 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 게임 상태 리셋 함수
+    socket.on('forceEndGame', (room) => {
+        const session = rooms[room];
+        if (session && session.hostId === socket.id) {
+            resetGameStatus(room);
+            io.to(room).emit('gameEnded'); 
+        }
+    });
+
+    function eliminatePlayer(room, playerId, reason) {
+        const session = rooms[room];
+        if (!session || !session.players[playerId]) return;
+        const player = session.players[playerId];
+        if (!player.isAlive) return;
+
+        player.isAlive = false;
+        if (gameTimers[playerId]) clearTimeout(gameTimers[playerId]);
+        
+        // 클라이언트로 탈락 사유(reason)를 보냄
+        io.to(room).emit('playerOut', { name: player.name, word: player.forbiddenWord, reason: reason });
+        
+        const alivePlayers = Object.values(session.players).filter(p => p.isAlive);
+        if (alivePlayers.length === 1) {
+            io.to(room).emit('gameWinner', alivePlayers[0].name);
+            resetGameStatus(room);
+        }
+        io.to(room).emit('updatePlayers', session.players);
+    }
+
+    function startAFKTimer(room, playerId) {
+        if (gameTimers[playerId]) clearTimeout(gameTimers[playerId]);
+        gameTimers[playerId] = setTimeout(() => {
+            eliminatePlayer(room, playerId, "30초 시간 초과"); // 시간 초과 사유 전달
+        }, 30000);
+    }
+
     function resetGameStatus(room) {
         const session = rooms[room];
         if (session) {
@@ -140,6 +154,7 @@ io.on('connection', (socket) => {
                 session.players[id].isAlive = true;
                 session.players[id].isReady = false;
                 session.players[id].forbiddenWord = '';
+                if (gameTimers[id]) clearTimeout(gameTimers[id]);
             }
             io.to(room).emit('updatePlayers', session.players);
         }
