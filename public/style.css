@@ -1,72 +1,43 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: sans-serif; background: #f0f2f5; overflow: hidden; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: sans-serif; background: #f0f2f5; overflow: hidden; position: fixed; width: 100%; height: 100%; }
 
 .overlay { position: fixed; inset: 0; background: white; display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.card { text-align: center; width: 300px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-.avatar-circle { width: 100px; height: 100px; background: #f8f9fa; border-radius: 50%; margin: 20px auto; cursor: pointer; overflow: hidden; line-height: 100px; border: 2px dashed #ddd; }
+.card { text-align: center; width: 90%; max-width: 320px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 
-#leaderboard { position: fixed; left: 20px; top: 20px; width: 180px; background: white; padding: 15px; border-radius: 12px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.word-badge { background: #ff7675; color: white; padding: 2px 6px; border-radius: 5px; font-size: 11px; margin-left: 5px; }
+#leaderboard { position: fixed; left: 10px; top: 10px; width: 130px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 12px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-size: 11px; }
+.word-badge { background: #ff7675; color: white; padding: 1px 4px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
 
-/* --- 심플 배경 디자인 --- */
-.lounge-bg { width: 100vw; height: 100vh; position: relative; background: #f7f9fc; }
+/* 배경 및 오브제 */
+.lounge-bg { width: 100vw; height: 100vh; position: relative; background: #f7f9fc; touch-action: none; }
+.minimal-rug { width: 220px; height: 90px; background: #e9ecef; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
+.minimal-pot { position: absolute; bottom: 20%; right: 10%; width: 35px; height: 45px; background: #d1d8e0; border-radius: 5px 5px 15px 15px; z-index: 1; }
+.minimal-pot::before { content: ''; position: absolute; top: -25px; left: 12px; width: 8px; height: 25px; background: #a5b1c2; }
+.leaf { position: absolute; top: -40px; left: -5px; width: 45px; height: 25px; background: #778ca3; border-radius: 50% 50% 0 50%; transform: rotate(-10deg); }
 
-/* 중앙의 심플한 러그 */
-.minimal-rug { 
-    width: 350px; height: 150px; 
-    background: #e9ecef; 
-    border-radius: 50%; 
-    position: absolute; 
-    top: 55%; left: 50%; 
-    transform: translate(-50%, -50%); 
-    z-index: 0; 
-}
+/* 조이스틱 스타일 */
+#joystick-container { position: fixed; bottom: 40px; left: 30px; z-index: 200; touch-action: none; }
+#joystick-base { width: 100px; height: 100px; background: rgba(0,0,0,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+#joystick-stick { width: 45px; height: 45px; background: rgba(0,0,0,0.25); border-radius: 50%; }
 
-/* 심플한 화분 오브제 */
-.minimal-pot {
-    position: absolute;
-    bottom: 15%; right: 10%;
-    width: 40px; height: 50px;
-    background: #d1d8e0;
-    border-radius: 5px 5px 15px 15px;
-    z-index: 1;
-}
-.minimal-pot::before {
-    content: '';
-    position: absolute;
-    top: -30px; left: 15px;
-    width: 10px; height: 30px;
-    background: #a5b1c2;
-}
-.leaf {
-    position: absolute;
-    top: -45px; left: -5px;
-    width: 50px; height: 30px;
-    background: #778ca3;
-    border-radius: 50% 50% 0 50%;
-    transform: rotate(-10deg);
-}
-
+/* 캐릭터 */
 #avatar-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 .avatar-wrapper { position: absolute; top: 0; left: 0; text-align: center; will-change: transform; }
-.avatar-img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; background: white; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.avatar-img { width: 55px; height: 55px; border-radius: 50%; border: 3px solid #fff; background: white; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .avatar-img.walking { animation: bounce 0.6s infinite alternate ease-in-out; }
-@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-15px); } }
-
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
 .avatar-wrapper.dead { opacity: 0.3; filter: grayscale(1); }
-.label { background: rgba(0,0,0,0.5); color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; margin-top: 8px; display: inline-block; }
+.label { background: rgba(0,0,0,0.5); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-top: 5px; display: inline-block; }
 
-.game-ui { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 420px; z-index: 100; }
-#chat-display { height: 140px; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); overflow-y: auto; padding: 12px; border-radius: 15px; border: 1px solid rgba(0,0,0,0.05); font-size: 14px; }
-
-.ghost-chat { opacity: 0.4; color: #888; font-style: italic; }
-.ghost-tag { color: #eb4d4b; font-weight: bold; font-size: 11px; margin-right: 4px; }
-
-.input-area { display: flex; gap: 8px; margin-top: 10px; }
-#chatInput { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
-#startBtn, #stopBtn { padding: 0 20px; border-radius: 10px; color: white; border: none; cursor: pointer; font-weight: bold; }
+/* 모바일 UI 레이아웃 최적화 */
+.game-ui { position: fixed; bottom: 10px; right: 10px; width: calc(100% - 150px); max-width: 350px; z-index: 100; display: flex; flex-direction: column; gap: 5px; }
+#chat-display { height: 110px; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); overflow-y: auto; padding: 10px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+.input-area { display: flex; gap: 5px; }
+#chatInput { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-size: 14px; }
+#sendBtn { padding: 0 15px; border-radius: 10px; background: #4b7bec; color: white; border: none; font-weight: bold; cursor: pointer; }
+.control-btns { display: flex; gap: 5px; }
+#startBtn, #stopBtn { flex: 1; padding: 10px; border-radius: 10px; color: white; border: none; cursor: pointer; font-weight: bold; font-size: 12px; }
 #startBtn { background: #778ca3; }
 #stopBtn { background: #ffb8b8; }
 
 .btn-blue { width: 100%; padding: 12px; background: #4b7bec; color: white; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; }
-.modal { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.1); z-index: 2000; text-align: center; }
+.modal { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); z-index: 2000; text-align: center; width: 85%; }
