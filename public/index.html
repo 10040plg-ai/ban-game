@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>심플 대기실 금지어 게임</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="setup-screen" class="overlay">
+        <div class="card">
+            <h2>Guest Check-in</h2>
+            <div id="avatar-preview" class="avatar-circle" onclick="document.getElementById('imageInput').click()">사진 선택</div>
+            <input type="file" id="imageInput" accept="image/*" style="display:none">
+            <input type="text" id="nickName" placeholder="닉네임 입력">
+            <button class="btn-blue" onclick="finishSetup()">완료</button>
+        </div>
+    </div>
+
+    <div id="room-screen" class="overlay" style="display:none">
+        <div class="card">
+            <input type="text" id="roomCode" placeholder="방 번호 입력">
+            <button onclick="connectRoom()" class="btn-blue">입장하기</button>
+        </div>
+    </div>
+
+    <div id="game-screen" style="display:none">
+        <div id="leaderboard">
+            <h3>금지어 리스트</h3>
+            <div id="leader-list"></div>
+        </div>
+        
+        <div class="lounge-bg">
+            <div class="minimal-rug"></div>
+            <div class="minimal-pot">
+                <div class="leaf"></div>
+            </div>
+            
+            <div id="avatar-layer"></div>
+            
+            <div id="word-setter" class="modal" style="display:none">
+                <p><strong id="target-player-name"></strong>님의 금지어:</p>
+                <input type="text" id="target-word-input">
+                <button onclick="confirmWord()" class="btn-blue">준비 완료</button>
+            </div>
+            
+            <div class="game-ui">
+                <div id="chat-display"></div>
+                <div class="input-area">
+                    <input type="text" id="chatInput" placeholder="WASD 이동 / 엔터 채팅">
+                    <button id="startBtn" onclick="requestStart()">시작</button>
+                    <button id="stopBtn" onclick="forceEnd()">종료</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
