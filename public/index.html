@@ -11,7 +11,10 @@
     <div id="setup-screen" class="overlay">
         <div class="card">
             <h2>Guest Check-in</h2>
-            <div id="avatar-preview" class="avatar-circle" onclick="document.getElementById('imageInput').click()">사진 선택</div>
+            <div id="avatar-preview" class="avatar-circle" onclick="document.getElementById('imageInput').click()">
+                <div class="plus-icon">+</div>
+                <div class="info-text">사진 선택</div>
+            </div>
             <input type="file" id="imageInput" accept="image/*" style="display:none">
             <input type="text" id="nickName" placeholder="닉네임 입력">
             <button class="btn-blue" onclick="finishSetup()">완료</button>
@@ -33,13 +36,11 @@
         
         <div class="lounge-bg">
             <div class="minimal-rug"></div>
-            <div class="minimal-pot">
-                <div class="leaf"></div>
-            </div>
+            <div class="minimal-pot"><div class="leaf"></div></div>
             
             <div id="avatar-layer"></div>
 
-            <div id="joystick-container">
+            <div id="joystick-wrapper">
                 <div id="joystick-base">
                     <div id="joystick-stick"></div>
                 </div>
@@ -54,10 +55,10 @@
             <div class="game-ui">
                 <div id="chat-display"></div>
                 <div class="input-area">
-                    <input type="text" id="chatInput" placeholder="메시지 입력...">
+                    <input type="text" id="chatInput" placeholder="이동:WASD/조이스틱">
                     <button id="sendBtn" onclick="sendChat()">전송</button>
                 </div>
-                <div class="control-btns">
+                <div class="action-btns">
                     <button id="startBtn" onclick="requestStart()">시작</button>
                     <button id="stopBtn" onclick="forceEnd()">종료</button>
                 </div>
