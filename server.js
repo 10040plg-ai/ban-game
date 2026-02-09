@@ -15,7 +15,7 @@ io.on('connection', (socket) => {
         
         rooms[room].players[socket.id] = {
             id: socket.id, name, avatar, 
-            x: Math.random() * 400 + 50, y: Math.random() * 300 + 100,
+            x: Math.random() * 200 + 50, y: Math.random() * 200 + 100,
             forbiddenWord: '', isAlive: true, isReady: false, isMoving: false
         };
         io.to(room).emit('updatePlayers', rooms[room].players);
@@ -91,9 +91,4 @@ io.on('connection', (socket) => {
     });
 });
 
-
-const PORT = process.env.PORT || 3000; // Render가 주는 포트를 쓰거나, 없으면 3000 사용
-
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
-});
+server.listen(3000, () => console.log('서버 실행 중: http://localhost:3000'));
