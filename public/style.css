@@ -1,10 +1,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { font-family: sans-serif; background: #f0f2f5; overflow: hidden; position: fixed; width: 100%; height: 100%; }
-
 .overlay { position: fixed; inset: 0; background: white; display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .card { text-align: center; width: 90%; max-width: 320px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 
-/* 이미지 등록 버튼 개선 */
 .avatar-circle { 
     width: 110px; height: 110px; background: #fff; border-radius: 50%; margin: 0 auto 20px auto; 
     cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -13,51 +11,42 @@ body { font-family: sans-serif; background: #f0f2f5; overflow: hidden; position:
 .plus-icon { font-size: 30px; font-weight: bold; }
 .info-text { font-size: 11px; font-weight: bold; }
 
-/* 가상 조이스틱 */
-#joystick-wrapper { 
-    position: fixed; bottom: 40px; left: 30px; z-index: 200; 
-    touch-action: none; user-select: none;
-}
-#joystick-base { 
-    width: 100px; height: 100px; background: rgba(0,0,0,0.1); 
-    border-radius: 50%; display: flex; justify-content: center; align-items: center; 
-}
-#joystick-stick { 
-    width: 45px; height: 45px; background: rgba(0,0,0,0.3); 
-    border-radius: 50%; pointer-events: none;
-}
+#joystick-wrapper { position: fixed; bottom: 40px; left: 30px; z-index: 200; touch-action: none; user-select: none; }
+#joystick-base { width: 100px; height: 100px; background: rgba(0,0,0,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+#joystick-stick { width: 45px; height: 45px; background: rgba(0,0,0,0.3); border-radius: 50%; pointer-events: none; }
 
-/* 대기실 배경 */
 .lounge-bg { width: 100vw; height: 100vh; position: relative; background: #f7f9fc; }
 .minimal-rug { width: 300px; height: 120px; background: #e9ecef; border-radius: 50%; position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
 .minimal-pot { position: absolute; bottom: 20%; right: 10%; width: 35px; height: 45px; background: #d1d8e0; border-radius: 5px 5px 15px 15px; z-index: 1; }
 .minimal-pot::before { content: ''; position: absolute; top: -25px; left: 12px; width: 8px; height: 25px; background: #a5b1c2; }
 .leaf { position: absolute; top: -40px; left: -5px; width: 45px; height: 25px; background: #778ca3; border-radius: 50% 50% 0 50%; transform: rotate(-10deg); }
 
-/* 캐릭터 및 레이어 */
 #avatar-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 .avatar-wrapper { position: absolute; top: 0; left: 0; text-align: center; }
+.avatar-box { position: relative; display: inline-block; }
 .avatar-img { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #fff; background: white; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .avatar-img.walking { animation: bounce 0.6s infinite alternate ease-in-out; }
 @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+
+/* 탈락 효과: 흑백 및 투명도 */
+.avatar-wrapper.dead { filter: grayscale(1); opacity: 0.4; transition: all 0.5s; }
+
 .label { background: rgba(0,0,0,0.5); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-top: 5px; display: inline-block; }
 
-/* 하단 UI */
-.game-ui { 
-    position: fixed; bottom: 10px; right: 10px; 
-    width: calc(100% - 150px); max-width: 400px; z-index: 100;
-    display: flex; flex-direction: column; gap: 5px;
-}
+.game-ui { position: fixed; bottom: 10px; right: 10px; width: calc(100% - 150px); max-width: 400px; z-index: 100; display: flex; flex-direction: column; gap: 5px; }
 #chat-display { height: 100px; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); overflow-y: auto; padding: 8px; border-radius: 12px; font-size: 13px; }
 .input-area { display: flex; gap: 5px; }
 #chatInput { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 14px; }
 #sendBtn { padding: 0 15px; background: #4b7bec; color: white; border: none; border-radius: 8px; font-weight: bold; }
+
 .action-btns { display: flex; gap: 5px; }
-#startBtn, #stopBtn { flex: 1; padding: 8px; border-radius: 8px; color: white; border: none; font-weight: bold; font-size: 12px; }
-#startBtn { background: #778ca3; }
-#stopBtn { background: #ffb8b8; }
+#startBtn, #stopBtn { flex: 1; padding: 8px; border-radius: 8px; color: white; border: none; font-weight: bold; font-size: 12px; cursor: pointer; }
+#startBtn { background: #4b7bec; }
+#stopBtn { background: #ff7675; }
 
 #leaderboard { position: fixed; left: 10px; top: 10px; width: 140px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-size: 11px; }
+.leader-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
 .word-badge { background: #ff7675; color: white; padding: 1px 4px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
 .btn-blue { width: 100%; padding: 12px; background: #4b7bec; color: white; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; }
 .modal { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: white; padding: 20px; border-radius: 20px; width: 85%; z-index: 1100; text-align: center; }
+.ghost-chat { color: #aaa; font-style: italic; }
