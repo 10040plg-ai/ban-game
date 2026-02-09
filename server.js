@@ -1,11 +1,15 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e7 });
+const io = new Server(server, { 
+    maxHttpBufferSize: 1e7 
+});
 
 app.use(express.static('public'));
+
 let rooms = {};
 
 io.on('connection', (socket) => {
@@ -14,9 +18,15 @@ io.on('connection', (socket) => {
         if (!rooms[room]) rooms[room] = { players: {}, status: 'waiting' };
         
         rooms[room].players[socket.id] = {
-            id: socket.id, name, avatar, 
-            x: Math.random() * 200 + 50, y: Math.random() * 200 + 100,
-            forbiddenWord: '', isAlive: true, isReady: false, isMoving: false
+            id: socket.id, 
+            name, 
+            avatar, 
+            x: Math.random() * 300 + 50, 
+            y: Math.random() * 300 + 100,
+            forbiddenWord: '', 
+            isAlive: true, 
+            isReady: false, 
+            isMoving: false
         };
         io.to(room).emit('updatePlayers', rooms[room].players);
     });
@@ -83,7 +93,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         for (let r in rooms) {
-            if (rooms[r].players[socket.id]) {
+            if (rooms[r].players && rooms[r].players[socket.id]) {
                 delete rooms[r].players[socket.id];
                 io.to(r).emit('updatePlayers', rooms[r].players);
             }
@@ -91,4 +101,7 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => console.log('서버 실행 중: http://localhost:3000'));
+const PORT = 3000;
+server.listen(PORT, () => {
+    console.log(`서버 실행 중: http://localhost:${PORT}`);
+});
