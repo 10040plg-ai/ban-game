@@ -1,13 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>심플 대기실 금지어 게임</title>
     <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
-</head>
-<body>
+    <script src="/socket.io/socket.io.js"></script></head><body>
     <div id="setup-screen" class="overlay">
         <div class="card">
             <h2>Guest Check-in</h2>
@@ -58,13 +54,11 @@
                     <input type="text" id="chatInput" placeholder="이동:WASD/조이스틱">
                     <button id="sendBtn" onclick="sendChat()">전송</button>
                 </div>
-                <div class="action-btns">
+                <div class="action-btns" id="host-controls" style="display:none">
                     <button id="startBtn" onclick="requestStart()">시작</button>
                     <button id="stopBtn" onclick="forceEnd()">종료</button>
                 </div>
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
-</body>
-</html>
+    <script src="script.js"></script></body></html>
