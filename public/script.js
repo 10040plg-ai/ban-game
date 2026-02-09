@@ -3,8 +3,6 @@ let myData = { name: '', avatar: '', x: 300, y: 300 };
 let players = {}; 
 let currentRoom, targetIdForWord;
 const keys = {};
-
-// 조이스틱 변수
 let joystickActive = false;
 let joystickVector = { x: 0, y: 0 };
 
@@ -56,13 +54,11 @@ function updateMyPosition() {
     const speed = 4;
     let dx = 0, dy = 0;
 
-    // 키보드 이동
     if (keys['w'] || keys['arrowup']) dy -= speed;
     if (keys['s'] || keys['arrowdown']) dy += speed;
     if (keys['a'] || keys['arrowleft']) dx -= speed;
     if (keys['d'] || keys['arrowright']) dx += speed;
 
-    // 조이스틱 이동 (조이스틱이 활성화된 경우)
     if (joystickActive) {
         dx = joystickVector.x * speed;
         dy = joystickVector.y * speed;
@@ -83,11 +79,10 @@ function updateMyPosition() {
     }
 }
 
-// 가상 조이스틱 초기화
 function initJoystick() {
     const base = document.getElementById('joystick-base');
     const stick = document.getElementById('joystick-stick');
-    const limit = 40; // 스틱 이동 제한 반경
+    const limit = 40;
 
     const handleMove = (e) => {
         if (!joystickActive) return;
@@ -95,18 +90,14 @@ function initJoystick() {
         const rect = base.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
         let deltaX = touch.clientX - centerX;
         let deltaY = touch.clientY - centerY;
         const distance = Math.sqrt(deltaX**2 + deltaY**2);
-        
         if (distance > limit) {
             deltaX *= limit / distance;
             deltaY *= limit / distance;
         }
-        
         stick.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-        // 이동 벡터 정규화 (-1 ~ 1)
         joystickVector = { x: deltaX / limit, y: deltaY / limit };
     };
 
@@ -126,10 +117,10 @@ function sendChat() {
         input.value = '';
     }
 }
-
 document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') sendChat(); };
 
 socket.on('updatePlayers', (serverPlayers) => {
+    // 플레이어 데이터 갱신
     for (let id in serverPlayers) {
         if (!players[id]) {
             players[id] = { ...serverPlayers[id], curX: serverPlayers[id].x, curY: serverPlayers[id].y };
@@ -138,8 +129,21 @@ socket.on('updatePlayers', (serverPlayers) => {
         }
     }
     for (let id in players) { if (!serverPlayers[id]) delete players[id]; }
+
+    // 방장 체크하여 버튼 표시
+    const me = serverPlayers[socket.id];
+    if (me && me.isHost) {
+        document.getElementById('host-controls').style.display = 'flex';
+    } else {
+        document.getElementById('host-controls').style.display = 'none';
+    }
+
+    // 금지어 리스트 표시
     document.getElementById('leader-list').innerHTML = Object.values(serverPlayers).map(p => `
-        <div class="leader-item"><span>${p.name}</span><span class="word-badge">${p.forbiddenWord || '???'}</span></div>
+        <div class="leader-item">
+            <span>${p.isHost ? '👑' : ''} ${p.name}</span>
+            <span class="word-badge">${p.forbiddenWord || '???'}</span>
+        </div>
     `).join('');
 });
 
@@ -151,9 +155,13 @@ function renderAllPlayers() {
         const p = players[id];
         p.curX += (p.x - p.curX) * 0.15;
         p.curY += (p.y - p.curY) * 0.15;
+        
+        // dead 클래스로 흑백 효과만 줌 (해골 제거됨)
         html += `
             <div class="avatar-wrapper ${p.isAlive ? '' : 'dead'}" style="transform: translate(${p.curX}px, ${p.curY}px);">
-                <img src="${p.avatar}" class="avatar-img ${p.isMoving ? 'walking' : ''}">
+                <div class="avatar-box">
+                    <img src="${p.avatar}" class="avatar-img ${p.isMoving ? 'walking' : ''}">
+                </div>
                 <div class="label">${p.name} ${p.isReady ? '✅' : ''}</div>
             </div>
         `;
@@ -190,4 +198,9 @@ socket.on('gameStarted', () => alert("게임 시작!"));
 socket.on('gameEnded', () => {
     alert("게임이 종료되었습니다.");
     document.getElementById('word-setter').style.display = 'none';
+});
+
+// 승리 알림 이벤트 추가
+socket.on('gameWinner', (name) => {
+    alert(`🎉 게임 종료! [${name}]님이 최종 승리했습니다! 🎉`);
 });
